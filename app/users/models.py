@@ -17,7 +17,9 @@ class User(Base):
     last_name: Mapped[str]
     email: Mapped[str_uniq]
     password: Mapped[str]
-    role_id: Mapped[int] = mapped_column(ForeignKey('roles.id'), default=1, server_default=text("1"))
+    role_id: Mapped[int] = mapped_column(
+        ForeignKey("roles.id"), default=1, server_default=text("1")
+    )
     role: Mapped["Role"] = relationship("Role", back_populates="users", lazy="joined")
 
     def __repr__(self):

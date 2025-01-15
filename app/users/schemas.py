@@ -41,7 +41,11 @@ class SUserAuth(EmailModel):
 
 
 class RoleModel(BaseModel):
-    # id: int = Field(description="Идентификатор роли")
+    id: int = Field(description="Идентификатор роли")
+    name: str = Field(description="Название роли")
+    model_config = ConfigDict(from_attributes=True)
+
+class RoleAddModel(BaseModel):
     name: str = Field(description="Название роли")
     model_config = ConfigDict(from_attributes=True)
 
@@ -57,3 +61,9 @@ class SUserInfo(UserBase):
     @computed_field
     def role_id(self) -> int:
         return self.role.id
+    
+
+class UserFilter(BaseModel):
+    # Определите поля, которые могут быть использованы для фильтрации
+    username: str = None
+    email: str = None
