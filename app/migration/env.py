@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 from app.config import DATABASE_PG_URL
 from app.dao.database import Base
-# from app.auth.models import Role, User
+from app.users.models import Role, User
 
 config = context.config
 config.set_main_option("sqlalchemy.url", DATABASE_PG_URL)

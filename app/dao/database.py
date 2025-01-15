@@ -3,13 +3,14 @@ from functools import wraps
 
 from typing import Dict, Any, Annotated
 
-from config import DATABASE_PG_URL
+from app.config import DATABASE_PG_URL
 from sqlalchemy import func, TIMESTAMP, Integer
 from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase, declared_attr
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine, AsyncSession
 
 engine = create_async_engine(url=DATABASE_PG_URL)
 async_session_maker = async_sessionmaker(engine, class_=AsyncSession)
+str_uniq = Annotated[str, mapped_column(unique=True, nullable=False)]
 
 
 class Base(AsyncAttrs, DeclarativeBase):
