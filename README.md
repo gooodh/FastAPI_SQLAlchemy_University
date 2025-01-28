@@ -3,7 +3,7 @@ This project is a ready-made template for developing scalable web applications b
 ## The main structure of the project
 ```
 ├── app/
-│   ├── auth/
+│   ├── users/
 │   │   ├── dao.py
 │   │   ├── models.py
 │   │   ├── router.py
