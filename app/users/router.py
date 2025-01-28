@@ -1,9 +1,16 @@
 from typing import List
+
 from fastapi import APIRouter, Response, Depends
-from app.users.dependencies import get_current_user, get_current_admin_user
+
+from app.dependencies.dao_dep import get_session_with_commit, get_session_without_commit
+from app.dependencies.user_dep import (
+    check_refresh_token,
+    get_current_admin_user,
+    get_current_user,
+)
 from app.users.models import User
+from app.users.utils import authenticate_user, set_tokens
 from app.exceptions import UserAlreadyExistsException, IncorrectEmailOrPasswordException
-from app.users.auth import authenticate_user, create_access_token
 from app.users.dao import RoleDAO, UsersDAO
 from app.users.schemas import (
     RoleAddModel,
@@ -16,52 +23,61 @@ from app.users.schemas import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dao.session_maker import TransactionSessionDep, SessionDep
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
 @router.post("/register/")
 async def register_user(
-    user_data: SUserRegister, session: AsyncSession = TransactionSessionDep
+    user_data: SUserRegister, session: AsyncSession = Depends(get_session_with_commit)
 ) -> dict:
-    user = await UsersDAO.find_one_or_none(
-        session=session, filters=EmailModel(email=user_data.email)
+    # Проверка существования пользователя
+    user_dao = UsersDAO(session)
+
+    existing_user = await user_dao.find_one_or_none(
+        filters=EmailModel(email=user_data.email)
     )
-    if user:
+    if existing_user:
         raise UserAlreadyExistsException
+
+    # Подготовка данных для добавления
     user_data_dict = user_data.model_dump()
-    del user_data_dict["confirm_password"]
-    await UsersDAO.add(session=session, values=SUserAddDB(**user_data_dict))
-    return {"message": f"Вы успешно зарегистрированы!"}
+    user_data_dict.pop("confirm_password", None)
+
+    # Добавление пользователя
+    await user_dao.add(values=SUserAddDB(**user_data_dict))
+
+    return {"message": "Вы успешно зарегистрированы!"}
 
 
 @router.post("/role/")
 async def register_role(
-    user_data: RoleAddModel, session: AsyncSession = TransactionSessionDep
+    user_data: RoleAddModel, session: AsyncSession = Depends(get_session_with_commit)
 ) -> dict:
-    role = await RoleDAO.find_one_or_none(
-        session=session, filters=RoleAddModel(name=user_data.name)
-    )
+    role_dao = RoleDAO(session)
+
+    role = await role_dao.find_one_or_none(filters=RoleAddModel(name=user_data.name))
     if role:
         raise UserAlreadyExistsException
     user_data_dict = user_data.model_dump()
-    await RoleDAO.add(session=session, values=RoleAddModel(**user_data_dict))
+
+    await role_dao.add(values=RoleAddModel(**user_data_dict))
     return {"message": f"успешно добавлена роль!"}
 
 
 @router.post("/login/")
 async def auth_user(
-    response: Response, user_data: SUserAuth, session: AsyncSession = SessionDep
-):
-    check = await authenticate_user(
-        session=session, email=user_data.email, password=user_data.password
-    )
-    if check is None:
+    response: Response,
+    user_data: SUserAuth,
+    session: AsyncSession = Depends(get_session_without_commit),
+) -> dict:
+    users_dao = UsersDAO(session)
+    user = await users_dao.find_one_or_none(filters=EmailModel(email=user_data.email))
+
+    if not (user and await authenticate_user(user=user, password=user_data.password)):
         raise IncorrectEmailOrPasswordException
-    access_token = create_access_token({"sub": str(check.id)})
-    response.set_cookie(key="users_access_token", value=access_token, httponly=True)
-    return {"ok": True, "access_token": access_token, "message": "Авторизация успешна!"}
+    set_tokens(response, user.id)
+    return {"ok": True, "message": "Авторизация успешна!"}
 
 
 @router.post("/logout/")
@@ -77,9 +93,15 @@ async def get_me(user_data: User = Depends(get_current_user)) -> SUserInfo:
 
 @router.get("/all_users/")
 async def get_all_users(
-    session: AsyncSession = SessionDep,
+    session: AsyncSession = Depends(get_session_with_commit),
     user_data: User = Depends(get_current_admin_user),
 ) -> List[SUserInfo]:
-    # Создаем пустой фильтр
-    empty_filter = UserFilter()  # Все поля будут равны None
-    return await UsersDAO.find_all(session=session, filters=empty_filter)
+    return await UsersDAO(session).find_all()
+
+
+@router.post("/refresh")
+async def process_refresh_token(
+    response: Response, user: User = Depends(check_refresh_token)
+):
+    set_tokens(response, user.id)
+    return {"message": "Токены успешно обновлены"}

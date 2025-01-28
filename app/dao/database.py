@@ -30,12 +30,38 @@ class Base(AsyncAttrs, DeclarativeBase):
         TIMESTAMP, server_default=func.now(), onupdate=func.now()
     )
 
+
     @declared_attr
     def __tablename__(cls) -> str:
-        return cls.__name__.lower() + "s"
+        return cls.__name__.lower() + 's'
 
-    def to_dict(self) -> Dict[str, Any]:
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+    def to_dict(self, exclude_none: bool = False):
+        """
+        Преобразует объект модели в словарь.
+
+        Args:
+            exclude_none (bool): Исключать ли None значения из результата
+
+        Returns:
+            dict: Словарь с данными объекта
+        """
+        result = {}
+        for column in inspect(self.__class__).columns:
+            value = getattr(self, column.key)
+
+            # Преобразование специальных типов данных
+            if isinstance(value, datetime):
+                value = value.isoformat()
+            elif isinstance(value, Decimal):
+                value = float(value)
+            elif isinstance(value, uuid.UUID):
+                value = str(value)
+
+            # Добавляем значение в результат
+            if not exclude_none or value is not None:
+                result[column.key] = value
+
+        return result
 
     def __repr__(self) -> str:
         """Строковое представление объекта для удобства отладки."""
