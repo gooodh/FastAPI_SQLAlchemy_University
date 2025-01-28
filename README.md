@@ -3,32 +3,32 @@ This project is a ready-made template for developing scalable web applications b
 ## The main structure of the project
 ```
 ├── app/
-│   ├── auth/                   
-│   │   ├── auth.py             
-│   │   ├── dao.py              
-│   │   ├── dependencies.py     
-│   │   ├── models.py           
-│   │   ├── router.py           
-│   │   ├── schemas.py          
-│   │   └── utils.py            
-│   ├── dao/                    
-│   │   └── base.py             
-│   ├── migration/              
-│   │   ├── versions/           
-│   │   ├── env.py              
-│   │   ├── README              
-│   │   └── script.py.mako      
-│   ├── static/                 
-│   │   └── .gitkeep            
-│   ├── config.py               
-│   ├── database.py             
-│   ├── exceptions.py           
-│   ├── main.py                 
-├── data/                       
-│   └── db.sqlite3              
-├── .env                        
-├── .gitignore                  
-├── alembic.ini                 
-├── README.md                   
-└── requirements.txt            
+│   ├── auth/
+│   │   ├── dao.py
+│   │   ├── models.py
+│   │   ├── router.py
+│   │   ├── schemas.py
+│   │   └── utils.py
+│   ├── dao/
+│   │   ├── database.py
+│   │   └── base.py
+│   ├── dependencies
+│   │   ├── auth_dep.py
+│   │   └── dao_dep.py
+│   ├── migration/
+│   │   ├── versions/
+│   │   ├── env.py
+│   │   ├── README
+│   │   └── script.py.mako
+│   ├── static/
+│   │   └── .gitkeep
+│   ├── config.py
+│   ├── exceptions.py
+│   ├── main.py
+├── data/
+│   └── db.sqlite3
+├── .env
+├── alembic.ini
+├── README.md
+└── requirements.txt
 ```
